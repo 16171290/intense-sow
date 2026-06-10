@@ -61,7 +61,7 @@
 
   <div class="mini" id="exp" style="display:none">
     <button id="pdf">🖨 Print / PDF</button>
-    <button id="csv">⤓ CSV</button>
+    <button id="csv">⤓ Excel</button>
     <button id="copy">⧉ Copy</button>
     <button id="clr">New property</button>
   </div>
@@ -165,18 +165,30 @@ ${sections}
   setTimeout(()=>w.print(),400);
 };
 
-// ---- CSV ----
+// ---- Excel (.xls with formatting) ----
 $("csv").onclick=()=>{
   const addr=$("addr").value.trim(); const sqft=$("sqft").value.trim();
-  const contractor=$("contractor").value.trim(); const date=$("date").value.trim();
-  let rows=[["SCOPE OF WORK — INTENSE HOLDINGS INC"],[""],
-    ["Property",addr],["Sq Ft",sqft],["Contractor",contractor],["Date",date],[""],
-    ["Scope of Work","Details / Notes"]];
-  data.forEach(rm=>{rows.push([rm.room,""]);rm.items.forEach(it=>rows.push([it.scope,it.details]));});
-  const csv=rows.map(r=>r.map(c=>'"'+(c||"").replace(/"/g,'""')+'"').join(",")).join("\n");
-  const blob=new Blob([csv],{type:"text/csv"});
+  const contractor=$("contractor").value.trim(); const date=$("date").value.trim()||(new Date().toLocaleDateString());
+  const e=s=>(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  let body="";
+  body+='<tr><td style="font-weight:bold;font-size:16pt">Scope of Work</td><td></td></tr>';
+  body+='<tr><td style="font-size:11pt">Intense Properties</td><td></td></tr>';
+  body+='<tr><td></td><td></td></tr>';
+  body+='<tr><td style="font-weight:bold">Property Address</td><td>'+e(addr)+'</td></tr>';
+  body+='<tr><td style="font-weight:bold">Sq Ft</td><td>'+e(sqft)+'</td></tr>';
+  if(contractor) body+='<tr><td style="font-weight:bold">Contractor</td><td>'+e(contractor)+'</td></tr>';
+  body+='<tr><td style="font-weight:bold">Date</td><td>'+e(date)+'</td></tr>';
+  body+='<tr><td></td><td></td></tr>';
+  body+='<tr><td style="font-weight:bold;border-bottom:1px solid #000">Scope of Work</td><td style="font-weight:bold;border-bottom:1px solid #000">Details / Notes</td></tr>';
+  data.forEach(rm=>{
+    body+='<tr><td></td><td></td></tr>';
+    body+='<tr><td style="font-weight:bold;font-size:12pt">'+e(rm.room)+'</td><td></td></tr>';
+    rm.items.forEach(it=>{ body+='<tr><td>'+e(it.scope)+'</td><td>'+e(it.details)+'</td></tr>'; });
+  });
+  const html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>td{vertical-align:top;font-family:Arial;font-size:10pt;padding:2px 6px}</style></head><body><table>'+body+'</table></body></html>';
+  const blob=new Blob(["\ufeff"+html],{type:"application/vnd.ms-excel"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download="SOW_"+((addr||"property").replace(/[^a-z0-9]+/gi,"_"))+".csv"; a.click();
+  a.download="SOW_"+((addr||"property").replace(/[^a-z0-9]+/gi,"_"))+".xls"; a.click();
 };
 
 // ---- Copy ----
